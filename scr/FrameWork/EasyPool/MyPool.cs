@@ -55,15 +55,18 @@ namespace EasyPool
         {
             try
             {
-                OutCheckTimer.Enabled = false;
-
-                for (int i = list.Count - 1; i > 0; i--)
+                lock (LockObj)
                 {
-                    var st = list[i];
-                    if (st.LastUseTime.AddSeconds(_TimeOut) < DateTime.Now)
+                    OutCheckTimer.Enabled = false;
+
+                    for (int i = list.Count - 1; i >= 0; i--)
                     {
-                        list.RemoveAt(i);
-                        _Pobject.CloseAndDispose(st.Obj);
+                        var st = list[i];
+                        if (st.LastUseTime.AddSeconds(_TimeOut) < DateTime.Now)
+                        {
+                            list.RemoveAt(i);
+                            _Pobject.CloseAndDispose(st.Obj);
+                        }
                     }
                 }
             }
@@ -113,6 +116,7 @@ namespace EasyPool
                     if (list.Count > 0)
                     {
                         st = list.First();
+                        list.RemoveAt(0);
                     }
                     else
                     {

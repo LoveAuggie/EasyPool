@@ -96,6 +96,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\DBPool\DBPool.csproj">
+      <Project>{2808b846-9c06-402d-af3c-735f855b24c6}</Project>
+      <Name>DBPool</Name>
+    </ProjectReference>
     <ProjectReference Include="..\FrameWork\EasyPool\EasyPool.csproj">
       <Project>{70c96d81-2908-43d6-9676-4d8b0b8886f6}</Project>
       <Name>EasyPool</Name>
