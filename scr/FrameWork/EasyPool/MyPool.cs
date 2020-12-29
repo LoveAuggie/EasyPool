@@ -8,8 +8,10 @@ using System.Timers;
 
 namespace EasyPool
 {
-    public class MyPool<T> where T: class
+    public class MyPool<T> where T : class
     {
+        private object LockObj = new object();
+
         /// <summary>
         /// 当前列表
         /// </summary>
@@ -22,7 +24,8 @@ namespace EasyPool
 
         private PoolObject<T> _Pobject = null;
 
-        private int _TimeOut;
+        // 默认超时时间60秒
+        private int _TimeOut = 10 * 60;
 
         private int _MaxCount;
 
@@ -36,7 +39,7 @@ namespace EasyPool
             }
         }
 
-        public MyPool(PoolObject<T> pObjcet, int MaxCount = 0, int TimeOut = 0)
+        public MyPool(PoolObject<T> pObjcet, int MaxCount = 0, int TimeOut = 600)
         {
             _Pobject = pObjcet;
             _MaxCount = MaxCount;
@@ -73,31 +76,36 @@ namespace EasyPool
             }
         }
 
-        public void Run(Action<T> act)
+        public bool Run(Action<T> act)
         {
             SingelObject<T> st = null;
             st = this.Get();
             T t = default(T);
-            if (st != null)
+            if (st == null)
             {
-                t = st.Obj;
+                return false;
             }
+
             try
             {
+                t = st.Obj;
                 act.Invoke(t);
             }
             catch { }
             finally
             {
-                if (st != null)
-                    this.Return(st);
+                this.Return(st);
             }
+            return true;
         }
 
         private SingelObject<T> Get()
         {
-            lock (list)
+            lock (LockObj)
             {
+                if (this._MaxCount > 0 && this.CurrentCount >= this._MaxCount)
+                    return null;
+
                 int sum = 0;
                 while (sum++ <= 5)
                 {
@@ -134,13 +142,16 @@ namespace EasyPool
 
         private void Return(SingelObject<T> poolObject)
         {
-            used.Remove(poolObject);
+            lock (LockObj)
+            {
+                used.Remove(poolObject);
 
-            /* 每次都放在最前面，这样若是需要的连接数比较少，
-             * 而创建的连接数又比较多的话，会导致队列尾的若干个连接一直不会被用到
-             * 从而可以被检查线程自动释放掉
-            */
-            list.Insert(0, poolObject);
+                /* 每次都放在最前面，这样若是需要的连接数比较少，
+                 * 而创建的连接数又比较多的话，会导致队列尾的若干个连接一直不会被用到
+                 * 从而可以被检查线程自动释放掉
+                */
+                list.Insert(0, poolObject);
+            }
         }
     }
 

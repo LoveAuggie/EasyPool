@@ -34,6 +34,7 @@ namespace EasyPool
         {
             var config = new ConnectionConfig() 
             {
+                // 每次使用之后，不自动关闭
                 IsAutoCloseConnection = false,
                 DbType = this.DBType,
                 ConnectionString = this.ConnectString
